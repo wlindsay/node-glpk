@@ -1,5 +1,7 @@
 
 #include <node.h>
+#include <ios>
+#include <fstream>
 #include "tree.hpp"
 #include "problem.hpp"
 #include "mathprog.hpp"
@@ -16,8 +18,8 @@ extern "C" {
     }
 
     void _TermHook(const char *s){
-        fputs(s, stdout);
-        fflush(stdout);
+        std::ofstream logFile("log.txt", std::ios_base::app | std::ios_base::out);
+        logFile << s;
     }
 
     NAN_METHOD(TermOutput) {
