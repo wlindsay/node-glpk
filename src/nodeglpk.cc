@@ -13,13 +13,14 @@ using namespace NodeGLPK;
 
 extern "C" {
     
-    void _ErrorHook(const char *s){
-        throw std::string(s);
+    void _ErrorHook(void *info){
+        throw std::string("Abnormal termination");
     }
 
-    void _TermHook(const char *s){
+    int _TermHook(void *info, const char *s){
         std::ofstream logFile("log.txt", std::ios_base::app | std::ios_base::out);
         logFile << s;
+        return 0;
     }
 
     NAN_METHOD(TermOutput) {
@@ -27,14 +28,14 @@ extern "C" {
         V8CHECK(!info[0]->IsBoolean(), "Wrong arguments");
         
         if (info[0]->BooleanValue()) {
-            GLP_CATCH_RET(glp_term_hook(_TermHook);)
+            GLP_CATCH_RET(glp_term_hook(_TermHook, NULL);)
         } else {
-            GLP_CATCH_RET(glp_term_hook(NULL);)
+            GLP_CATCH_RET(glp_term_hook(NULL, NULL);)
         }
     }
     
     void Init(Handle<Object> exports) {
-        glp_error_hook(_ErrorHook);
+        glp_error_hook(_ErrorHook, NULL);
 
         exports->Set(Nan::New<String>("termOutput").ToLocalChecked(), Nan::New<FunctionTemplate>(TermOutput)->GetFunction());
         
@@ -135,14 +136,6 @@ extern "C" {
         GLP_DEFINE_CONSTANT(exports, GLP_IBRANCH, IBRANCH);
         GLP_DEFINE_CONSTANT(exports, GLP_ISELECT, ISELECT);
         GLP_DEFINE_CONSTANT(exports, GLP_IPREPRO, IPREPRO);
-        
-        GLP_DEFINE_CONSTANT(exports, GLP_FROWGEN, FROWGEN);
-        GLP_DEFINE_CONSTANT(exports, GLP_FBINGO, FBINGO);
-        GLP_DEFINE_CONSTANT(exports, GLP_FHEUR, FHEUR);
-        GLP_DEFINE_CONSTANT(exports, GLP_FCUTGEN, FCUTGEN);
-        GLP_DEFINE_CONSTANT(exports, GLP_FBRANCH, FBRANCH);
-        GLP_DEFINE_CONSTANT(exports, GLP_FSELECT, FSELECT);
-        GLP_DEFINE_CONSTANT(exports, GLP_FPREPRO, FPREPRO);
         
         GLP_DEFINE_CONSTANT(exports, GLP_NO_BRNCH, NO_BRNCH);
         GLP_DEFINE_CONSTANT(exports, GLP_DN_BRNCH, DN_BRNCH);

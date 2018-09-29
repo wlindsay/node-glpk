@@ -3,7 +3,7 @@
 /***********************************************************************
 *  This code is part of GLPK (GNU Linear Programming Kit).
 *
-*  Copyright (C) 2012-2013 Andrew Makhorin, Department for Applied
+*  Copyright (C) 2012-2018 Andrew Makhorin, Department for Applied
 *  Informatics, Moscow Aviation Institute, Moscow, Russia. All rights
 *  reserved. E-mail: <mao@gnu.org>.
 *
@@ -21,7 +21,7 @@
 *  along with GLPK. If not, see <http://www.gnu.org/licenses/>.
 ***********************************************************************/
 
-#include "glpenv.h"
+#include "env.h"
 #include "wclique1.h"
 
 /***********************************************************************
@@ -64,7 +64,7 @@
 
 struct vertex { int i; double cw; };
 
-static int fcmp(const void *xx, const void *yy)
+static int CDECL fcmp(const void *xx, const void *yy)
 {     const struct vertex *x = xx, *y = yy;
       if (x->cw > y->cw) return -1;
       if (x->cw < y->cw) return +1;

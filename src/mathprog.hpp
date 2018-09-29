@@ -30,7 +30,6 @@ namespace NodeGLPK {
             Nan::SetPrototypeMethod(tpl, "postsolveSync", PostsolveSync);
             Nan::SetPrototypeMethod(tpl, "postsolve", Postsolve);
             Nan::SetPrototypeMethod(tpl, "getLine", getLine);
-            Nan::SetPrototypeMethod(tpl, "getLastError", getLastError);
             
             constructor.Reset(tpl);
             exports->Set(Nan::New<String>("Mathprog").ToLocalChecked(), tpl->GetFunction());
@@ -330,19 +329,6 @@ namespace NodeGLPK {
             V8CHECK(mp->thread, "an async operation is inprogress");
             
             info.GetReturnValue().Set(*(int*)mp->handle);
-        }
-        
-        static NAN_METHOD(getLastError){
-            V8CHECK(info.Length() != 0, "Wrong number of arguments");
-            
-            Mathprog* mp = ObjectWrap::Unwrap<Mathprog>(info.Holder());
-            V8CHECK(!mp->handle, "object deleted");
-            V8CHECK(mp->thread, "an async operation is inprogress");
-            char * msg = glp_mpl_getlasterror(mp->handle);
-            if (msg)
-                info.GetReturnValue().Set(Nan::New<String>(msg).ToLocalChecked());
-            else
-                info.GetReturnValue().Set(Nan::Null());
         }
         
         GLP_BIND_DELETE(Mathprog, Delete, glp_mpl_free_wksp);
