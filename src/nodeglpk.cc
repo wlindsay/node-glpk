@@ -28,8 +28,10 @@ extern "C" {
         V8CHECK(!info[0]->IsBoolean(), "Wrong arguments");
         
         if (info[0]->BooleanValue()) {
+            GLP_CATCH_RET(glp_term_out(1);)
             GLP_CATCH_RET(glp_term_hook(_TermHook, NULL);)
         } else {
+            GLP_CATCH_RET(glp_term_out(0);)
             GLP_CATCH_RET(glp_term_hook(NULL, NULL);)
         }
     }
