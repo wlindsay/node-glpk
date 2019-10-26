@@ -36,9 +36,7 @@ Local<String> constant_name =\
 String::NewFromUtf8(isolate, #name);\
 Local<Number> constant_value =\
 Number::New(isolate, static_cast<double>(constant));\
-PropertyAttribute constant_attributes =\
-static_cast<PropertyAttribute>(ReadOnly | DontDelete);\
-(target)->ForceSet(constant_name, constant_value, constant_attributes);\
+target->Set(constant_name, constant_value);\
 }\
 while (0)
 
