@@ -1338,7 +1338,7 @@ int ios_solve_node(glp_tree *tree)
          default:
             xassert(tree != tree);
       }
-      parm.meth = GLP_DUALP;
+      parm.meth = GLP_PRIMAL;
 #if 1 /* 16/III-2016 */
       if (tree->parm->flip)
          parm.r_test = GLP_RT_FLIP;
