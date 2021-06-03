@@ -11,7 +11,7 @@
 
 #include <nan.h>
 
-#define V8TOCSTRING(S) (*String::Utf8Value(S->ToString()))
+#define V8TOCSTRING(S) (*Nan::Utf8String(S))
 
 #define V8CHECK(T, E) if (T) { \
     Nan::ThrowTypeError(E);\
@@ -29,14 +29,20 @@
 
 #define GLP_CATCH(X) try{X}catch (std::string s) {Nan::ThrowError(s.c_str());}
 
+#define GLP_TO_INT32(OBJ) Nan::To<int32_t>(OBJ).ToChecked()
+
+#define GLP_TO_NUMBERVALUE(OBJ) Nan::To<double>(OBJ).ToChecked()
+
+#define GLP_TO_BOOL(OBJ) Nan::To<bool>(OBJ).ToChecked()
+
 #define GLP_DEFINE_CONSTANT(target, constant, name)\
 do {\
 Isolate* isolate = Isolate::GetCurrent();\
 Local<String> constant_name =\
-String::NewFromUtf8(isolate, #name);\
+String::NewFromUtf8(isolate, #name).ToLocalChecked();\
 Local<Number> constant_value =\
 Number::New(isolate, static_cast<double>(constant));\
-target->Set(constant_name, constant_value);\
+Nan::Set(target, constant_name, constant_value);\
 }\
 while (0)
 
@@ -74,7 +80,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(API(host->handle, info[0]->Int32Value());)\
+    GLP_CATCH_RET(API(host->handle, GLP_TO_INT32(info[0]));)\
 }
 
 #define GLP_BIND_VALUE(CLASS, NAME, API)\
@@ -95,7 +101,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(API(host->handle, info[0]->Int32Value(), V8TOCSTRING(info[1]));)\
+    GLP_CATCH_RET(API(host->handle, GLP_TO_INT32(info[0]), V8TOCSTRING(info[1]));)\
 }
 
 #define GLP_BIND_STR_INT32(CLASS, NAME, API);\
@@ -107,7 +113,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(const char* name = API(host->handle, info[0]->Int32Value());\
+    GLP_CATCH_RET(const char* name = API(host->handle, GLP_TO_INT32(info[0]));\
     if (name)\
         info.GetReturnValue().Set(Nan::New<String>(name).ToLocalChecked());\
     else\
@@ -124,8 +130,8 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(API(host->handle, info[0]->Int32Value(), info[1]->Int32Value(),\
-                     info[2]->NumberValue(), info[3]->NumberValue());)\
+    GLP_CATCH_RET(API(host->handle, GLP_TO_INT32(info[0]), GLP_TO_INT32(info[1]),\
+                     GLP_TO_NUMBERVALUE(info[2]), GLP_TO_NUMBERVALUE(info[3]));)\
 }
 
 #define GLP_BIND_VOID_INT32_DOUBLE(CLASS, NAME, API)\
@@ -137,7 +143,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(API(host->handle, info[0]->Int32Value(), info[1]->NumberValue());)\
+    GLP_CATCH_RET(API(host->handle, GLP_TO_INT32(info[0]), GLP_TO_NUMBERVALUE(info[1]));)\
 }
 
 #define GLP_BIND_VALUE_INT32(CLASS, NAME, API)\
@@ -149,7 +155,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(info.GetReturnValue().Set(API(host->handle, info[0]->Int32Value()));)\
+    GLP_CATCH_RET(info.GetReturnValue().Set(API(host->handle, GLP_TO_INT32(info[0])));)\
 }
 
 #define GLP_BIND_VOID_INT32_INT32ARRAY_FLOAT64ARRAY(CLASS, NAME, API)\
@@ -171,10 +177,10 @@ static NAN_METHOD(NAME) {\
     int* pja = (int*)malloc(ja->Length() * sizeof(int));\
     double* par = (double*)malloc(ar->Length() * sizeof(double));\
     \
-    for (size_t i = 0; i < ja->Length(); i++) pja[i] = ja->Get(i)->Int32Value();\
-    for (size_t i = 0; i < ar->Length(); i++) par[i] = ar->Get(i)->NumberValue();\
+    for (size_t i = 0; i < ja->Length(); i++) pja[i] = GLP_TO_INT32(Nan::Get(ja, i).ToLocalChecked());\
+    for (size_t i = 0; i < ar->Length(); i++) par[i] = GLP_TO_NUMBERVALUE(Nan::Get(ar, i).ToLocalChecked());\
     \
-    GLP_CATCH_RET(API(host->handle, info[0]->Int32Value(), count, pja, par);)\
+    GLP_CATCH_RET(API(host->handle, GLP_TO_INT32(info[0]), count, pja, par);)\
     \
     free(pja);\
     free(par);\
@@ -190,7 +196,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
     try{\
-        int row = info[0]->Int32Value();\
+        int row = GLP_TO_INT32(info[0]);\
         int count = API(host->handle, row, NULL, NULL);\
         \
         if ((info.Length() == 2) && (info[1]->IsFunction())) {\
@@ -199,15 +205,15 @@ static NAN_METHOD(NAME) {\
             API(host->handle, row, idx, val);\
             Local<Int32Array> ja = Int32Array::New(ArrayBuffer::New(Isolate::GetCurrent(), sizeof(int) * (count+1)), 0, count + 1);\
             Local<Float64Array> ar = Float64Array::New(ArrayBuffer::New(Isolate::GetCurrent(), sizeof(double) * (count+1)), 0, count + 1);\
-        	for (int i = 1; i <= count; i++) ja->Set((uint32_t)i, Int32::New(Isolate::GetCurrent(), idx[i]));\
-        	for (int i = 1; i <= count; i++) ar->Set((uint32_t)i, Number::New(Isolate::GetCurrent(), val[i]));\
+        	for (int i = 1; i <= count; i++) Nan::Set(ja, (uint32_t)i, Int32::New(Isolate::GetCurrent(), idx[i]));\
+        	for (int i = 1; i <= count; i++) Nan::Set(ar, (uint32_t)i, Number::New(Isolate::GetCurrent(), val[i]));\
         	free(idx);\
         	free(val);\
             \
             Local<Function> cb = Local<Function>::Cast(info[1]);\
             const unsigned argc = 2;\
             Local<Value> argv[argc] = {ja, ar};\
-            cb->Call(Isolate::GetCurrent()->GetCurrentContext()->Global(), argc, argv);\
+            Nan::Call(cb, Isolate::GetCurrent()->GetCurrentContext()->Global(), argc, argv);\
             info.GetReturnValue().Set(count);\
         }\
     } catch (std::string s) {\
@@ -236,7 +242,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(count <= 1, "Invalid Array size");\
     \
     int* idx = (int*)malloc(count * sizeof(int));\
-    for (int i = 0; i < count; i++) idx[i] = num->Get(i)->Int32Value();\
+    for (int i = 0; i < count; i++) idx[i] = GLP_TO_INT32(Nan::Get(num, i).ToLocalChecked());\
     CLASS* host = ObjectWrap::Unwrap<CLASS>(info.Holder());\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
@@ -267,7 +273,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(API(host->handle, info[0]->Int32Value(), info[1]->Int32Value());)\
+    GLP_CATCH_RET(API(host->handle, GLP_TO_INT32(info[0]), GLP_TO_INT32(info[1]));)\
 }
 
 #define GLP_BIND_VALUE_INT32_STR(CLASS, NAME, API)\
@@ -279,7 +285,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(info.GetReturnValue().Set(API(host->handle, info[0]->Int32Value(), V8TOCSTRING(info[1])));)\
+    GLP_CATCH_RET(info.GetReturnValue().Set(API(host->handle, GLP_TO_INT32(info[0]), V8TOCSTRING(info[1])));)\
 }
 
 #define GLP_BIND_VALUE_STR_INT32(CLASS, NAME, API)\
@@ -291,7 +297,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(!host->handle, "object deleted");\
     V8CHECK(host->thread, "an async operation is inprogress")\
     \
-    GLP_CATCH_RET(info.GetReturnValue().Set(API(host->handle, V8TOCSTRING(info[0]), info[1]->Int32Value()));)\
+    GLP_CATCH_RET(info.GetReturnValue().Set(API(host->handle, V8TOCSTRING(info[0]), GLP_TO_INT32(info[1])));)\
 }
 
 #define GLP_BIND_DELETE(CLASS, NAME, API)\
@@ -305,10 +311,10 @@ static NAN_METHOD(NAME) {\
 }
 
 #define GLP_SET_FIELD_INT32(OBJ, KEY, VALUE)\
-OBJ->Set(Nan::New<String>(KEY).ToLocalChecked(), Nan::New<Int32>(VALUE));
+Nan::Set(OBJ, Nan::New<String>(KEY).ToLocalChecked(), Nan::New<Int32>(VALUE));
 
 #define GLP_SET_FIELD_DOUBLE(OBJ, KEY, VALUE)\
-OBJ->Set(Nan::New<String>(KEY).ToLocalChecked(), Nan::New<Number>(VALUE));
+Nan::Set(OBJ, Nan::New<String>(KEY).ToLocalChecked(), Nan::New<Number>(VALUE));
 
 
 #define GLP_ASYNC_INT32_STR(CLASS, NAME, API)\
@@ -394,7 +400,7 @@ static NAN_METHOD(NAME) {\
     V8CHECK(lp->thread, "an async operation is inprogress")\
     \
     Nan::Callback *callback = new Nan::Callback(info[2].As<Function>());\
-    NAME##Worker *worker = new NAME##Worker(callback, lp, info[0]->Int32Value(), V8TOCSTRING(info[1]));\
+    NAME##Worker *worker = new NAME##Worker(callback, lp, GLP_TO_INT32(info[0]), V8TOCSTRING(info[1]));\
     lp->thread = true;\
     Nan::AsyncQueueWorker(worker);\
 }\

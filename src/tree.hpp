@@ -11,7 +11,7 @@ namespace NodeGLPK {
     
     class Tree : public node::ObjectWrap {
     public:
-        static void Init(Handle<Object> exports){
+        static void Init(Local<Object> exports){
             // Prepare constructor template
             Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
             tpl->SetClassName(Nan::New("Tree").ToLocalChecked());
@@ -46,7 +46,7 @@ namespace NodeGLPK {
         static Local<Value> Instantiate(glp_tree* tree){
             Nan::MaybeLocal<Function> cons = Nan::GetFunction(Nan::New<FunctionTemplate>(constructor));
             Local<Value> ret = cons.ToLocalChecked();
-            Tree* host = ObjectWrap::Unwrap<Tree>(ret->ToObject());
+            Tree* host = ObjectWrap::Unwrap<Tree>(Nan::To<Object>(ret).ToLocalChecked());
             host->handle = tree;
             host->thread = false;
             return ret;
@@ -109,7 +109,7 @@ namespace NodeGLPK {
             V8CHECK(host->thread, "an async operation is inprogress");
             
             glp_attr attr;
-            GLP_CATCH_RET(glp_ios_row_attr(host->handle, info[0]->Int32Value(), &attr);)
+            GLP_CATCH_RET(glp_ios_row_attr(host->handle, GLP_TO_INT32(info[0]), &attr);)
             
             Local<Object> ret = Nan::New<Object>();
             GLP_SET_FIELD_INT32(ret, "level", attr.level);
@@ -140,13 +140,13 @@ namespace NodeGLPK {
             double* pval = (double*)malloc(count * sizeof(double));
             
             for (unsigned int i = 0; i < count; i++){
-                pind[i] = ind->Int32Value();
-                pval[i] = val->NumberValue();
+                pind[i] = GLP_TO_INT32(ind);
+                pval[i] = GLP_TO_NUMBERVALUE(val);
             }
             
             count--;
-            GLP_CATCH(info.GetReturnValue().Set(glp_ios_add_row(tree->handle, V8TOCSTRING(info[0]), info[1]->Int32Value(),
-                info[2]->Int32Value(), count, pind, pval, info[5]->Int32Value(), info[6]->NumberValue()));)
+            GLP_CATCH(info.GetReturnValue().Set(glp_ios_add_row(tree->handle, V8TOCSTRING(info[0]), GLP_TO_INT32(info[1]),
+                GLP_TO_INT32(info[2]), count, pind, pval, GLP_TO_INT32(info[5]), GLP_TO_NUMBERVALUE(info[6])));)
             
             free(pind);
             free(pval);
@@ -176,7 +176,7 @@ namespace NodeGLPK {
             GLP_CATCH_RET(V8CHECK(count != (glp_get_num_cols(glp_ios_get_prob(tree->handle)) + 1), "Invalid arrays length");)
             
             double* px = (double*)malloc(count * sizeof(double));
-            for (int i = 0; i < count; i++) px[i] = x->NumberValue();
+            for (int i = 0; i < count; i++) px[i] = GLP_TO_NUMBERVALUE(x);
             GLP_CATCH(info.GetReturnValue().Set(glp_ios_heur_sol(tree->handle, px));)
             free(px);
         }

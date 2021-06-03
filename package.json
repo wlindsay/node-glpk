@@ -1,6 +1,6 @@
 {
   "name": "glpk",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "license": "MPL-2.0",
   "main": "index.js",
   "authors": [
@@ -16,8 +16,9 @@
     "glpk"
   ],
   "dependencies": {
-    "bindings": "1.3.0",
-    "nan": "^2.14.0"
+    "bindings": "^1.5.0",
+    "nan": "^2.14.2",
+    "node-gyp": "^8.1.0"
   },
   "scripts": {
     "configure": "node-gyp configure",
