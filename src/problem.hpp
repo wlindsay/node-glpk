@@ -29,6 +29,7 @@ namespace NodeGLPK {
             Nan::SetPrototypeMethod(tpl, "getRowName", GetRowName);
             Nan::SetPrototypeMethod(tpl, "setRowBnds", SetRowBnds);
             Nan::SetPrototypeMethod(tpl, "addCols", AddCols);
+            Nan::SetPrototypeMethod(tpl, "copyProb", CopyProb);
             Nan::SetPrototypeMethod(tpl, "setColName", SetColName);
             Nan::SetPrototypeMethod(tpl, "getColName", GetColName);
             Nan::SetPrototypeMethod(tpl, "setColBnds", SetColBnds);
@@ -1084,6 +1085,23 @@ namespace NodeGLPK {
             ScaleWorker *worker = new ScaleWorker(callback, lp, GLP_TO_INT32(info[0]));
             lp->thread = true;
             Nan::AsyncQueueWorker(worker);
+        }
+
+        static NAN_METHOD(CopyProb) {
+            V8CHECK(info.Length() != 2, "Wrong number of arguments");
+            V8CHECK(!info[0]->IsObject() || !info[1]->IsInt32(), "Wrong arguments");
+            
+            Problem* src = ObjectWrap::Unwrap<Problem>(info.Holder());
+            V8CHECK(!src->handle, "object deleted");
+            V8CHECK(src->thread, "an async operation is inprogress");
+
+            Problem* dest = ObjectWrap::Unwrap<Problem>(Nan::To<Object>(info[0]).ToLocalChecked());
+            V8CHECK(!dest || !dest->handle, "invalid problem");
+            V8CHECK(dest->thread, "an async operation is inprogress");
+
+            GLP_CATCH(
+                glp_copy_prob(dest->handle, src->handle, GLP_TO_INT32(info[1]));
+            );
         }
         
 
